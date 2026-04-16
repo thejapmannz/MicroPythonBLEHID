@@ -43,7 +43,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 This library offers implementations of Human Interface Devices (HID) over Bluetooth Low Energy (BLE) GATT for MicroPython.
-The library has been tested using an ESP32 development board ([TinyPICO](https://tinypico.com)) as the peripheral and Windows 10 as the central.
+The library has been tested using an ESP32 development board ([TinyPICO](https://unexpectedmaker.com/)) as the peripheral and Windows 10 as the central.
 Examples and basic implementations of HID devices are available for
 
 - Keyboard,
@@ -75,7 +75,10 @@ The following is required to use this library:
 
 ### My device doesn't reconnect after power cycling
 Please make sure bonding and LE secure is enabled (default).
-If that doesn't work, please try using NVS storage before calling `start()`:
+If that doesn't work, try using NVS storage before calling `start()`.
+Please make sure to remove the device from the client before connecting.
+If you do not, the device will expect the keys from the old key store and immediately disconnect.
+
 ```python
 from hid_keystores import NVSKeyStore
 
@@ -83,8 +86,9 @@ ks = NVSKeyStore()
 self.keyboard.set_keystore(ks)
 ```
 
-Please make sure to remove the device from the client before connecting.
-If you do not, the device will expect the keys from the old key store and immediately disconnect.
+### My device still doesn't reconnect after power cycling
+It looks like your board does not support non-volatile storage.
+I recommend getting a board that has additional PSRAM.
 
 ### Using a keyboard and mouse simultaneously
 This is not immediately supported.
