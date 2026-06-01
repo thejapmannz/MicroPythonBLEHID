@@ -1,5 +1,5 @@
 # MicroPython Human Interface Device library
-# Copyright (C) 2021 H. Groefsema
+# Copyright (C) 2021 H. Groefsema [heerkog], 2026 B.Jones [thjapmannz]
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -651,10 +651,12 @@ class Joystick(HumanInterfaceDevice):
             0xa1, 0x00,                                                                                                 #   COLLECTION (Physical)
             0x09, 0x30,                                                                                                 #     USAGE (X)
             0x09, 0x31,                                                                                                 #     USAGE (Y)
+            0x09, 0x32,                                                                                                 #     USAGE (Z)
+            0x09, 0x35,                                                                                                 #     USAGE (Rz)
             0x15, 0x81,                                                                                                 #     LOGICAL_MINIMUM (-127)
             0x25, 0x7f,                                                                                                 #     LOGICAL_MAXIMUM (127)
             0x75, 0x08,                                                                                                 #     REPORT_SIZE (8)
-            0x95, 0x02,                                                                                                 #     REPORT_COUNT (2)
+            0x95, 0x04,                                                                                                 #     REPORT_COUNT (4)
             0x81, 0x02,                                                                                                 #     INPUT (Data,Var,Abs)
             0x05, 0x09,                                                                                                 #     USAGE_PAGE (Button)
             0x29, 0x08,                                                                                                 #     USAGE_MAXIMUM (Button 8)
@@ -670,8 +672,10 @@ class Joystick(HumanInterfaceDevice):
         # fmt: on
 
         # Define the initial joystick state.
-        self.x = 0
-        self.y = 0
+        self.x  = 0 # Primary left/right - roll
+        self.y  = 0 # Primary forward/back - pitch
+        self.z  = 0 # Throttle
+        self.rz = 0 # Yaw/Rudder
 
         self.button1 = 0
         self.button2 = 0
@@ -702,7 +706,7 @@ class Joystick(HumanInterfaceDevice):
         (h_info, h_hid, h_ctrl, self.h_rep, h_d1, h_proto) = handles[3]                                                 # Get the handles for the HIDS characteristics. These correspond directly to self.HIDS. Position 3 because of the order of self.services.
 
         b = self.button1 + self.button2 * 2 + self.button3 * 4 + self.button4 * 8 + self.button5 * 16 + self.button6 * 32 + self.button7 * 64 + self.button8 * 128
-        state = struct.pack("bbB", self.x, self.y, b)                                                                   # Pack the initial joystick state as described by the input report.
+        state = struct.pack("bbbbB", self.x, self.y, self.z, self.rz, b)                                                # Pack the initial joystick state as described by the input report.
 
         print("Saving HID service characteristics")
         # Save service characteristics
@@ -717,25 +721,18 @@ class Joystick(HumanInterfaceDevice):
     def notify_hid_report(self):
         if self.is_connected():
             b = self.button1 + self.button2 * 2 + self.button3 * 4 + self.button4 * 8 + self.button5 * 16 + self.button6 * 32 + self.button7 * 64 + self.button8 * 128
-            state = struct.pack("bbB", self.x, self.y, b)                                                               # Pack the joystick state as described by the input report.
+            state = struct.pack("bbbbB", self.x, self.y, self.z, self.rz, b)                                            # Pack the joystick state as described by the input report.
             self.characteristics[self.h_rep] = ("HID report", state)
             self._ble.gatts_notify(self.conn_handle, self.h_rep, state)                                                 # Notify client by writing to the report handle.
-            print("Notify with report: ", struct.unpack("bbB", state))
+            print("Notify with report: ", struct.unpack("bbbbB", state))
 
     # Set the joystick axes values.
-    def set_axes(self, x=0, y=0):
-        if x > 127:
-            x = 127
-        elif x < -127:
-            x = -127
-
-        if y > 127:
-            y = 127
-        elif y < -127:
-            y = -127
-
-        self.x = x
-        self.y = y
+    def set_axes(self, x=0, y=0, z=0, rz=0):
+        
+        self.x  = min(max( x, -127), 127)
+        self.y  = min(max( y, -127), 127)
+        self.z  = min(max( z, -127), 127)
+        self.rz = min(max(rz, -127), 127)
 
     # Set the joystick button values.
     def set_buttons(self, b1=0, b2=0, b3=0, b4=0, b5=0, b6=0, b7=0, b8=0):

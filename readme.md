@@ -42,6 +42,8 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
+thjapmannz changes: changed from 2-axis joystick to 4-axis, to allow use with flightsim games. 
+
 This library offers implementations of Human Interface Devices (HID) over Bluetooth Low Energy (BLE) GATT for MicroPython.
 The library has been tested using an ESP32 development board ([TinyPICO](https://unexpectedmaker.com/)) as the peripheral and Windows 10 as the central.
 Examples and basic implementations of HID devices are available for
